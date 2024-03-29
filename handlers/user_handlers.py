@@ -5,13 +5,13 @@ import asyncio
 from aiogram import Router, F
 from aiogram.filters import ChatMemberUpdatedFilter, KICKED, Command, CommandStart, StateFilter
 from aiogram.types import ChatMemberUpdated, Message
+
 from lexicon.lexicon_ru import LEXICON_RU
-from models.methods import DataKeyboard
+from models.methods import StaticData
+from keyboards.keyboard_utils import create_inline_kb
 
 # Инициализируем роутер уровня модуля. Фактически, это наследник диспетчера(корневого роутера)
 router = Router()
-
-db = asyncio.run(DataKeyboard().get_data_keyboard)
 
 
 @router.message(CommandStart())
@@ -26,12 +26,26 @@ async def process_help_command(message: Message):
 
 @router.message(Command(commands='create_character'))
 async def process_create_hero_command(message: Message):
-    await message.answer(text='Каким классом вы хотите играть?')
+
+    # Создаем singleton экземпляр класса StaticData
+    db = StaticData()
+
+    # Создаем атрибуты для сохранение данных из БД - быстрый доступ без задержек
+    await db.load_data()
+
+    # Получаем список классов из БД для формирования клавиатуры
+    buttons = list(db.classes.keys())[1:]
+
+    # Задаем параметры для inline keyboard
+    keyboard = create_inline_kb(buttons, 3)
+
+    # Нужно сделать текст по середине панели + добавить картинку
+    await message.answer(text='Каким классом вы хотите играть?', reply_markup=keyboard)
 
 
-@router.message(F.text.lower().in_(db['character_classes']))
-async def process_selection_class(message: Message):
-    await message.answer(text='Отлично идем дальше')
+# @router.message(F.text.lower().in_(['character_classes']))
+# async def process_selection_class(message: Message):
+#     await message.answer(text='Отлично идем дальше')
 
 
 @router.message()

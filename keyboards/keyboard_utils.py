@@ -1,11 +1,20 @@
 """Вспомогательные функции/методы, помогающие формировать клавиатуры."""
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from models.methods import DataKeyboard
-import asyncio
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-data_keyboard = asyncio.run(DataKeyboard().get_data_keyboard)
 
+# Функция для формирования инлайн-клавиатуры на лету
+def create_inline_kb(buttons: list[str], width: int) -> InlineKeyboardMarkup:
+    # Инициализируем билдер
+    kb_builder = InlineKeyboardBuilder()
+    # Инициализируем список для кнопок
+    buttons: list[InlineKeyboardButton] = [InlineKeyboardButton(text=i, callback_data=i) for i in buttons]
+
+    # Распаковываем список с кнопками в билдер методом row c параметром width
+    kb_builder.row(*buttons, width=width)
+
+    # Возвращаем объект инлайн-клавиатуры
+    return kb_builder.as_markup()
 
 # class KeyboardClasses:

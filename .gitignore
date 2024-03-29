@@ -1,6 +1,6 @@
 /venv/
 /.idea/
 .env
-default_list.json
-exaple_list.json
+models/default_list.json
+create_character/exaple_list.json
 vcs.xml
