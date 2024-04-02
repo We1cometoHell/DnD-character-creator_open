@@ -7,7 +7,7 @@ from aiogram.fsm.state import default_state
 from aiogram.fsm.context import FSMContext
 
 from lexicon import lexicon_ru
-from models.models import StaticData, DataUsers
+from models.models import StaticData, ManagerUsers
 from keyboards.keyboard_utils import create_inline_kb
 from states.states import FSMCreateCharacter
 
@@ -18,8 +18,8 @@ router = Router()
 # Хендлер команды /start в дефолтном состоянии
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message):
-    user_data = DataUsers(_id=message.chat.id)
-    if not await user_data.get_data_user():
+    user_data = ManagerUsers(_id=message.chat.id)
+    if not await user_data.get_user():
         await user_data.append_user()
     await message.answer(text=lexicon_ru.LEXICON_RU_DEF_STATE['/start'])
 
@@ -68,7 +68,8 @@ async def process_create_hero_command(message: Message, state: FSMContext):
     await state.set_state(FSMCreateCharacter.choice_class)
 
 
-# Этот хэндлер будет срабатывать, если во время выбора класса
+# Хендлер команды /create_character отлавливающий
+# callback, если во время выбора класса
 # будет введено/отправлено что-то некорректное
 @router.message(StateFilter(FSMCreateCharacter.choice_class))
 async def warning_not_class(message: Message):
@@ -78,14 +79,14 @@ async def warning_not_class(message: Message):
 @router.callback_query(StateFilter(FSMCreateCharacter.choice_class))
 async def process_class_press(callback: CallbackQuery, state: FSMContext):
     # Cохраняем класс (callback.data нажатой кнопки) в хранилище,
-    # по ключу "_class", для получения словаря используй
-    # await state.get_data()
+    # по ключу "_class"
     await state.update_data(_class=callback.data)
     await callback.message.delete()
     await callback.message.answer(
         text='Отлично идем дальше'
     )
-    # Устанавливаем состояние ожидания загрузки фото
+
+    # Устанавливаем состояние ожидания выбора рассы
     await state.set_state(FSMCreateCharacter.choice_race)
 
 

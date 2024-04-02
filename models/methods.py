@@ -212,12 +212,16 @@ class ManagerCollection:
     _id: str
 
     async def add_doc(self):
-        db[self.collection].insert_one({'_id': self._id})
+        await db[self.collection].insert_one({'_id': self._id})
 
     async def update_doc(self, doc):
-        db[self.collection].update_one({'_id': self._id}, {'$set': doc})
+        await db[self.collection].update_one({'_id': self._id}, {'$set': doc})
+
+    async def get_doc(self, key):
+        doc = await db[self.collection].find_one({'_id': self._id})
+        return doc.get(key)
 
 
-dd = ManagerCollection()
+dd = ManagerCollection('classes_ru', 'classes')
 
-asyncio.run('Название функции')
+print(asyncio.run(dd.get_doc('Бард')))

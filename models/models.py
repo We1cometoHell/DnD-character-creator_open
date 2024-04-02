@@ -16,24 +16,24 @@ db = cluster.DnD_character_creator
 
 
 class DataKeyboard:
-    @property
-    async def get_data_keyboard(self):
+    @staticmethod
+    async def get_data_keyboard():
         data_keyboard = await db.keyboard_ru.find_one({'_id': 'keyboard'})
         return data_keyboard
 
 
 class DataClasses:
-    @property
-    async def get_data_classes(self):
+    @staticmethod
+    async def get_data_classes():
         data_classes = await db.classes_ru.find_one({'_id': 'classes'})
         return data_classes
 
 
 @dataclass
-class DataUsers:
+class ManagerUsers:
     _id: int
 
-    async def get_data_user(self):
+    async def get_user(self):
         data_users = await db.users.find_one({'_id': self._id})
         return data_users
 
@@ -54,5 +54,5 @@ class StaticData:
             self.__dict__[key] = value
 
     async def load_data(self):
-        self.classes = await DataClasses().get_data_classes
-        self.keyboard = await DataKeyboard().get_data_keyboard
+        self.classes = await DataClasses().get_data_classes()
+        self.keyboard = await DataKeyboard().get_data_keyboard()
