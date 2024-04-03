@@ -26,14 +26,20 @@ class StatsCalculator:
         self.stats = self.__base_stats
         self.count_stats = self.__base_count
 
-    async def change_stat(self, new_value: int, old_value: int, count_stats: int) -> (str, str):
-        if old_value != new_value:
-            count_stats -= self.__modifiers[new_value]
-            old_value = new_value
-        return str(old_value), str(count_stats)
+    async def change_stat(self, new_value: int, old_value: int, count_stats: int) -> (int, int):
+        value = new_value
+        if old_value < new_value:
+            count_stats -= self.__modifiers[new_value] - self.__modifiers[old_value]
+        elif old_value > new_value:
+            count_stats += self.__modifiers[old_value] - self.__modifiers[new_value]
 
-    async def get_possible_stats(self, count) -> list[str]:
-        return [str(k) for k, v in self.__modifiers.items() if count - v >= 0]
+        return value, count_stats
+
+    async def get_possible_stats(self, count: int, value: int) -> list[str]:
+        return [
+            str(k) for k, v in self.__modifiers.items()
+            if count + self.__modifiers[value] - v >= 0
+        ]
 
 
 class StatsRandomizer:

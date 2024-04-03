@@ -186,11 +186,13 @@ async def process_stat_press(callback: CallbackQuery, state: FSMContext):
 
     # Получаем данные пользователя из БД
     data = await state.get_data()
-    # Сохраняем текущее количество очков в переменную
+    # Сохраняем текущее количество очков и значение
+    # выбранной характеристики в переменные
     count_stats = data['count_stats']
+    stat_v = data['stats'][stat]
 
     # Получаем список ответов из экземпляра класса StatsCalculator для формирования клавиатуры
-    buttons = await stats_calculator.get_possible_stats(count_stats)
+    buttons = await stats_calculator.get_possible_stats(count_stats, stat_v)
 
     # Задаем параметры для inline keyboard
     keyboard = await create_inline_kb(4, *buttons, exp_callback=stat)
@@ -204,18 +206,42 @@ async def process_stat_press(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(StateFilter(FSMCreateCharacter.choice_stat))
 async def process_calc_stats_press(callback: CallbackQuery, state: FSMContext):
+    # Cохраняем новые данные о характеристике (название, значение)
+    # (callback.data нажатой кнопки) в переменные
     k_stat, new_v_stat = callback.data.split()
     await callback.message.delete()
-    # Не правильно считает понижение характеристики
+
+    # Получаем данные пользователя из БД
     data = await state.get_data()
+    # Словарь характеристик и значений
+    stats = data['stats']
+    # Старое значение счетчика
     old_count_stats = data['count_stats']
-    old_v_stat = data['stats'][k_stat]
+    # Старое значение характеристики
+    old_v_stat = stats[k_stat]
+    # Меняем значение характеристики на новое и обновляем счетчик
     v_stat, count_stats = await stats_calculator.change_stat(
         int(new_v_stat), old_v_stat, old_count_stats
     )
-    print(v_stat, count_stats)
+    # Устанавливаем новое значение в словарь
+    stats[k_stat] = v_stat
 
+    # Обновляем данные пользователя
+    await state.update_data(stats=stats, count_stats=count_stats)
+
+    # Задаем параметры для inline keyboard
+    keyboard = await create_inline_kb(2, **stats,
+                                      last_btn=lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats'])
+    await callback.message.answer(
+        text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_stats'].format(count_stats),
+        reply_markup=keyboard
+    )
+
+    # Устанавливаем состояние ожидания выбора характеристики
     await state.set_state(FSMCreateCharacter.choice_calc_stats)
+
+
+# @router.callback_query(StateFilter(FSMCreateCharacter))
 
 
 # Хендлер отвечающий на любой отправленный апдейт от пользователя
