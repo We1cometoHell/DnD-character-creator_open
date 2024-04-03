@@ -2,9 +2,8 @@
 
 import asyncio
 
-from motor.motor_asyncio import AsyncIOMotorClient
 from dataclasses import dataclass
-from config_data.config import load_config
+from models import db
 
 classes = {
     'Бард': {
@@ -199,29 +198,23 @@ races = {
     }
 }
 
-config = load_config()
-
-cluster = AsyncIOMotorClient(config.db.db_host.replace('<password>', config.db.db_password))
-
-db = cluster.DnD_character_creator
-
 
 @dataclass
 class ManagerCollection:
     collection: str
     _id: str
 
-    async def add_doc(self):
+    async def add_doc(self) -> None:
         await db[self.collection].insert_one({'_id': self._id})
 
-    async def update_doc(self, doc):
+    async def update_doc(self, doc: str) -> None:
         await db[self.collection].update_one({'_id': self._id}, {'$set': doc})
 
-    async def get_doc(self, key):
+    async def get_doc(self, key: str) -> dict:
         doc = await db[self.collection].find_one({'_id': self._id})
         return doc.get(key)
 
 
-dd = ManagerCollection('classes_ru', 'classes')
+mc = ManagerCollection('stats_ru', 'stats')
 
-print(asyncio.run(dd.get_doc('Бард')))
+

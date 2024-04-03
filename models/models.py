@@ -5,7 +5,6 @@
 """
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from dataclasses import dataclass
 from config_data.config import load_config
 
 config = load_config()
@@ -15,44 +14,44 @@ cluster = AsyncIOMotorClient(config.db.db_host.replace('<password>', config.db.d
 db = cluster.DnD_character_creator
 
 
-class DataKeyboard:
+class KeyboardLoader:
     @staticmethod
-    async def get_data_keyboard():
-        data_keyboard = await db.keyboard_ru.find_one({'_id': 'keyboard'})
+    async def get_data_races() -> dict | None:
+        data_keyboard = await db.races_ru.find_one({'_id': 'races'})
         return data_keyboard
 
-
-class DataClasses:
     @staticmethod
-    async def get_data_classes():
+    async def get_data_classes() -> dict | None:
         data_classes = await db.classes_ru.find_one({'_id': 'classes'})
         return data_classes
 
 
-@dataclass
 class ManagerUsers:
-    _id: int
+    @staticmethod
+    async def get_user(_id) -> dict | None:
+        return await db.users.find_one({'_id': _id})
 
-    async def get_user(self):
-        data_users = await db.users.find_one({'_id': self._id})
-        return data_users
-
-    async def append_user(self):
-        await db.users.insert_one({'_id': self._id})
+    @staticmethod
+    async def append_user(_id) -> None:
+        await db.users.insert_one({'_id': _id})
 
 
-class StaticData:
-    _instance = None
+# Создаем экземпляр класса KeyboardLoader
+# для получения данных клавиатуры
+kb_loader = KeyboardLoader()
+# Создаем экземпляр класса ManagerUsers
+# для управления данными пользователя
+manager_users = ManagerUsers()
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __setattr__(self, key, value):
-        if key not in self.__dict__:
-            self.__dict__[key] = value
-
-    async def load_data(self):
-        self.classes = await DataClasses().get_data_classes()
-        self.keyboard = await DataKeyboard().get_data_keyboard()
+# class StaticData:
+#     __instance = None
+#     __kb_loader = KeyboardLoader()
+#
+#     def __new__(cls):
+#         if cls.__instance is None:
+#             cls.__instance = super().__new__(cls)
+#         return cls.__instance
+#
+#     def __setattr__(self, key: str, value: dict):
+#         if key not in self.__dict__:
+#             self.__dict__[key] = value

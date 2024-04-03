@@ -4,7 +4,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import BaseStorage, StorageKey
 from typing import Any
 
-from models.models import db
+from models.models import db, ManagerUsers
 
 
 # Cоздаем класс StatesGroup для нашей машины состояний
@@ -14,14 +14,17 @@ class FSMCreateCharacter(StatesGroup):
     # бот в разные моменты взаимодействия с пользователем
     choice_class = State()  # Состояние выбора класса
     choice_race = State()  # Состояние выбора рассы
+    choice_variety = State()  # Состояние выбора подрассы
+    choice_stats_method = State()  # Состояние выбора варианта установки значений характеристик
+    choice_calc_stats = State()  # Состояние выбора калькулятора характеристик
+    choice_stat = State()  # Состояние выбора зачения характеристики
+    choice_roll_stats = State()  # Состояние рандомизации характеристик
     choice_backgrounds = State()  # Состояние выбора предыстории
 
 
 # Реализация MemoryStorage для MongoDB
 class MongoMemoryStorage(BaseStorage):
-    @staticmethod
-    async def get_data_user(_id):
-        return await db.users.find_one({'_id': _id})
+    __manager_users = ManagerUsers()
 
     async def set_state(self, key: StorageKey, state: str | State | None = None) -> None:
         """
@@ -38,7 +41,7 @@ class MongoMemoryStorage(BaseStorage):
         )
 
     async def get_state(self, key: StorageKey) -> str | None:
-        user_data: dict | None = await self.get_data_user(key.user_id)
+        user_data: dict | None = await self.__manager_users.get_user(key.user_id)
         if user_data:
             return user_data.get('state')
         return
@@ -62,7 +65,7 @@ class MongoMemoryStorage(BaseStorage):
         :param key: storage key
         :return: current data
         """
-        user_data: dict | None = await self.get_data_user(key.user_id)
+        user_data: dict | None = await self.__manager_users.get_user(key.user_id)
         if user_data:
             return user_data.get('sheet_data')
         return {}
@@ -85,8 +88,5 @@ class MongoMemoryStorage(BaseStorage):
     async def close(self) -> None:  # pragma: no cover
         """
         Close storage (database connection, file or etc.)
-
-        !!! ДОПИСАТЬ !!!
-
         """
         pass
