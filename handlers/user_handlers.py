@@ -58,8 +58,10 @@ async def process_create_character_command(message: Message, state: FSMContext):
     keyboard = await create_inline_kb(3, *classes, start=1)
 
     # Нужно сделать текст по середине панели + добавить картинку + добавить текст отклик на нажатие
-    await message.answer(text=lexicon_ru.LEXICON_RU_DEF_STATE['/create_character'],
-                         reply_markup=keyboard)
+    await message.answer(
+        text=lexicon_ru.LEXICON_RU_DEF_STATE['/create_character'],
+        reply_markup=keyboard
+    )
     # Устанавливаем состояние выбора класса
     await state.set_state(FSMCreateCharacter.choice_class)
 
@@ -76,8 +78,10 @@ async def process_class_press(callback: CallbackQuery, state: FSMContext):
 
     # Задаем параметры для inline keyboard
     keyboard = await create_inline_kb(3, *races, start=1)
-    await callback.message.answer(text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_race'],
-                                  reply_markup=keyboard)
+    await callback.message.answer(
+        text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_race'],
+        reply_markup=keyboard
+    )
     # Устанавливаем состояние ожидания выбора рассы
     await state.set_state(FSMCreateCharacter.choice_race)
 
@@ -85,7 +89,7 @@ async def process_class_press(callback: CallbackQuery, state: FSMContext):
 # Хендлер выбора подрассы, после выбора рассы
 @router.callback_query(
     StateFilter(FSMCreateCharacter.choice_race),
-    DataInCollection(kb_loader.get_data_races, 'variety'))
+    DataInCollection(kb_loader.get_data_races, ('variety',)))
 async def process_race_press(callback: CallbackQuery, state: FSMContext):
     # Cохраняем данные о рассе (callback.data нажатой кнопки) в хранилище
     await state.update_data(race=callback.data)
@@ -99,8 +103,10 @@ async def process_race_press(callback: CallbackQuery, state: FSMContext):
 
     # Задаем параметры для inline keyboard
     keyboard = await create_inline_kb(3, *buttons)
-    await callback.message.answer(text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_variety'],
-                                  reply_markup=keyboard)
+    await callback.message.answer(
+        text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_variety'],
+        reply_markup=keyboard
+    )
     # Устанавливаем состояние ожидания выбора рассы
     await state.set_state(FSMCreateCharacter.choice_variety)
 
@@ -159,24 +165,45 @@ async def process_calc_stats_press(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
 
     # Получаем список ответов из экземпляра класса StatsCalculator для формирования клавиатуры
-    buttons = stats_calculator.stats
+    buttons: dict = stats_calculator.stats
     # Получаем количество оставшихся очков для покупки характеристик
-    count_stats = stats_calculator.count_stats
+    count_stats: int = stats_calculator.count_stats
 
     # Задаем параметры для inline keyboard
-    keyboard = await create_inline_kb(2, **buttons,
-                                      last_btn=lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats'])
+    keyboard = await create_inline_kb(
+        2, **buttons, last_btn=lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats']
+    )
 
     await callback.message.answer(
         text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_stats'].format(count_stats),
         reply_markup=keyboard
     )
-
     # Устанавливаем состояние ожидания выбора характеристики
     await state.set_state(FSMCreateCharacter.choice_calc_stats)
 
 
-# Хендлер выбора значения характеристики, после выбора выбора характеристики
+# Хендлер выбора предыстории, после выбора характеристик
+@router.callback_query(StateFilter(
+    FSMCreateCharacter.choice_calc_stats),
+    F.data == lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats']
+)
+async def process_end_choice_stats(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+
+    # Получаем данные о предысториях
+    backgrounds: dict | None = await kb_loader.get_data_backgrounds()
+
+    # Задаем параметры для inline keyboard
+    keyboard = await create_inline_kb(2, *backgrounds, start=1)
+    await callback.message.answer(
+        text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_background'],
+        reply_markup=keyboard
+    )
+    # Устанавливаем состояние ожидания выбора предыстории
+    await state.set_state(FSMCreateCharacter.choice_backgrounds)
+
+
+# Хендлер установки значения характеристики, после выбора характеристики
 @router.callback_query(StateFilter(FSMCreateCharacter.choice_calc_stats))
 async def process_stat_press(callback: CallbackQuery, state: FSMContext):
     # Cохраняем данные о характеристике (callback.data нажатой кнопки) в переменную
@@ -204,6 +231,7 @@ async def process_stat_press(callback: CallbackQuery, state: FSMContext):
     await state.set_state(FSMCreateCharacter.choice_stat)
 
 
+# Хендлер выбора характеристики, после установки значения характеристики
 @router.callback_query(StateFilter(FSMCreateCharacter.choice_stat))
 async def process_calc_stats_press(callback: CallbackQuery, state: FSMContext):
     # Cохраняем новые данные о характеристике (название, значение)
@@ -230,8 +258,9 @@ async def process_calc_stats_press(callback: CallbackQuery, state: FSMContext):
     await state.update_data(stats=stats, count_stats=count_stats)
 
     # Задаем параметры для inline keyboard
-    keyboard = await create_inline_kb(2, **stats,
-                                      last_btn=lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats'])
+    keyboard = await create_inline_kb(
+        2, **stats, last_btn=lexicon_ru.LEXICON_RU_NDEF_STATE['end_choice_stats']
+    )
     await callback.message.answer(
         text=lexicon_ru.LEXICON_RU_NDEF_STATE['choice_stats'].format(count_stats),
         reply_markup=keyboard
@@ -241,7 +270,45 @@ async def process_calc_stats_press(callback: CallbackQuery, state: FSMContext):
     await state.set_state(FSMCreateCharacter.choice_calc_stats)
 
 
-# @router.callback_query(StateFilter(FSMCreateCharacter))
+# Хендлер описания предыстории, а также
+# утверждения предыстории либо возврата на
+# предыдущий шаг, после выбора предыстории
+@router.callback_query(StateFilter(FSMCreateCharacter.choice_backgrounds))
+async def process_confirm_background(callback: CallbackQuery, state: FSMContext):
+    # Cохраняем данные о предыстории (callback.data нажатой кнопки) в переменную
+    background = callback.data
+    await callback.message.delete()
+
+    # Получаем данные о предыстории из БД
+    backgrounds = await kb_loader.get_data_backgrounds()
+    # Получаем краткое описание предыстории
+    description = backgrounds[background]['static']['description']
+    buttons = lexicon_ru.LEXICON_RU_VARIANTS['confirm_background']
+
+    keyboard = await create_inline_kb(2, *buttons)
+
+    await callback.message.answer(
+        text=lexicon_ru.LEXICON_RU_NDEF_STATE['confirm_background'].format(
+            background, description
+        ),
+        reply_markup=keyboard
+    )
+
+    await state.set_state(FSMCreateCharacter.confirm_background)
+
+# # Хендлер выбора специфики от предыстории, если есть, после утверждения предыстории
+# @router.callback_query(
+#     StateFilter(
+#         FSMCreateCharacter.choice_backgrounds
+#     ),
+#     DataInCollection(
+#         kb_loader.get_data_backgrounds(),
+#         ('choice', 'personalization', 'type')
+#     )
+# )
+# async def process_choice_specific(callback: CallbackQuery, state: FSMContext):
+#     await state.update_data(background={'name': callback})
+#     await callback.message.delete()
 
 
 # Хендлер отвечающий на любой отправленный апдейт от пользователя

@@ -25,6 +25,11 @@ class KeyboardLoader:
         data_classes = await db.classes_ru.find_one({'_id': 'classes'})
         return data_classes
 
+    @staticmethod
+    async def get_data_backgrounds() -> dict | None:
+        data_backgrounds = await db.backgrounds_ru.find_one({'_id': 'backgrounds'})
+        return data_backgrounds
+
 
 class ManagerUsers:
     @staticmethod

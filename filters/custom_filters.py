@@ -11,4 +11,13 @@ class DataInCollection(BaseFilter):
 
     async def __call__(self, callback: CallbackQuery) -> None | dict:
         collection: dict | None = await self.method()
-        return collection[callback.data].get(self.data)
+        key: str = callback.data
+
+        for k in self.data:
+            collection = collection[key].get(k)
+            if collection:
+                key = k
+            else:
+                break
+
+        return collection

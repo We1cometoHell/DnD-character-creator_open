@@ -18,8 +18,9 @@ class FSMCreateCharacter(StatesGroup):
     choice_stats_method = State()  # Состояние выбора варианта установки значений характеристик
     choice_calc_stats = State()  # Состояние выбора калькулятора характеристик
     choice_stat = State()  # Состояние выбора зачения характеристики
-    choice_roll_stats = State()  # Состояние рандомизации характеристик
+    choice_roll_stats = State()  # Состояние броска кубов для определения характеристик
     choice_backgrounds = State()  # Состояние выбора предыстории
+    confirm_background = State()  # Состояние подтверждения предыстории
 
 
 # Реализация MemoryStorage для MongoDB

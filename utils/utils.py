@@ -42,7 +42,7 @@ class StatsCalculator:
         ]
 
 
-class StatsRandomizer:
+class StatsRoll:
     pass
 
 
